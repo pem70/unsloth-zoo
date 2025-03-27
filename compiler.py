@@ -2029,21 +2029,27 @@ def unsloth_compile_transformers(
 
     all_code = "\n\n".join(final_all_standalone_classes)
 
-    try:
-        combined_module = create_new_function(
-            f"{COMBINED_UNSLOTH_NAME}_{model_type}",
-            all_code,
-            model_location,
-            functions,
-            prepend = \
-                _disabled_sdpa_code + \
-                f"\ntorch_compile_options = {torch_compile_options}\n" + \
-                _cross_entropy_code + "\n"
-        )
-    except Exception as exception:
-        if not disable:
-            raise RuntimeError(exception)
-        combined_module = None
+    if import_from_cache:
+        try:
+            combined_module = importlib.import_module(f"{UNSLOTH_COMPILE_LOCATION}.{COMBINED_UNSLOTH_NAME}_{model_type}")
+        except:
+            import_from_cache = False
+    else:
+        try:
+            combined_module = create_new_function(
+                f"{COMBINED_UNSLOTH_NAME}_{model_type}",
+                all_code,
+                model_location,
+                functions,
+                prepend = \
+                    _disabled_sdpa_code + \
+                    f"\ntorch_compile_options = {torch_compile_options}\n" + \
+                    _cross_entropy_code + "\n"
+            )
+        except Exception as exception:
+            if not disable:
+                raise RuntimeError(exception)
+            combined_module = None
 
     if compile_torch_modules and not disable:
 
