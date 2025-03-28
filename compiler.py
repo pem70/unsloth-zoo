@@ -273,7 +273,7 @@ def create_new_function(
     functions,
     prepend = "",
     append = "",
-    overwrite = True,
+    overwrite = False,
     add_torch_compile = False,
 ):
     # All Unsloth Zoo code licensed under LGPLv3
@@ -330,21 +330,21 @@ def create_new_function(
     function_location = os.path.join(compile_folder, f"{name}.py")
 
     # Check if file was already created!
-    if not overwrite and os.path.isfile(function_location):
+    # if not overwrite and os.path.isfile(function_location):
 
-        # Check if exactly equivalent
-        with open(function_location, "r") as f: file_source = f.read()
+    #     # Check if exactly equivalent
+    #     with open(function_location, "r") as f: file_source = f.read()
 
-        if file_source != write_new_source:
-            overwrite = True
-        elif not overwrite:
-            if "__UNSLOTH_VERSIONING__" not in file_source:
-                overwrite = True
-            else:
-                versions = file_source[:file_source.find('__UNSLOTH_VERSIONING__')]
-                if versioning[:versioning.find('__UNSLOTH_VERSIONING__')] != versions:
-                    overwrite = True
-    pass
+    #     if file_source != write_new_source:
+    #         overwrite = True
+    #     elif not overwrite:
+    #         if "__UNSLOTH_VERSIONING__" not in file_source:
+    #             overwrite = True
+    #         else:
+    #             versions = file_source[:file_source.find('__UNSLOTH_VERSIONING__')]
+    #             if versioning[:versioning.find('__UNSLOTH_VERSIONING__')] != versions:
+    #                 overwrite = True
+    # pass
 
     # Check location
     def write_file(function_location, write_new_source):
@@ -1446,7 +1446,7 @@ def unsloth_compile_transformers(
     cudagraphs             : bool = False,
     debug                  : bool = False,
     fullgraph              : bool = True,
-    import_from_cache      : bool = False,
+    import_from_cache      : bool = True,
     disable                : bool = False,
     return_logits          : bool = False,
     supports_sdpa          : list = None,
@@ -2032,9 +2032,13 @@ def unsloth_compile_transformers(
     if import_from_cache:
         try:
             combined_module = importlib.import_module(f"{UNSLOTH_COMPILE_LOCATION}.{COMBINED_UNSLOTH_NAME}_{model_type}")
+            import_from_cache = True
         except:
             import_from_cache = False
     else:
+        import_from_cache = False
+    pass
+    if not import_from_cache:
         try:
             combined_module = create_new_function(
                 f"{COMBINED_UNSLOTH_NAME}_{model_type}",
@@ -2047,9 +2051,9 @@ def unsloth_compile_transformers(
                     _cross_entropy_code + "\n"
             )
         except Exception as exception:
-            if not disable:
-                raise RuntimeError(exception)
+            raise RuntimeError(exception)
             combined_module = None
+    pass
 
     if compile_torch_modules and not disable:
 
